@@ -1,0 +1,4 @@
+add $t0, $t3, $t1
+add $t0, $t3, $t3
+add $t0, $t3, $t3
+syscall

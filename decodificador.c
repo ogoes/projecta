@@ -52,7 +52,6 @@ void bin_prnt_byte(int x) {
     x = x << 1;
   }
 }
-
 /* Função que recupera o campo OpCode. */
 unsigned int getOpCode(unsigned int ir) {
   
@@ -102,11 +101,12 @@ int getImmediate(unsigned int ir) {
   return imm;
 }
 
+
 /* Função que recupera o campo Address. */
 unsigned int getAddress(unsigned int ir) {
   
   unsigned int address = (ir & mascaraAddress);
-  return address; 
+  return address * 4; 
 }
 
 /* Converte um char * representando um binário, para inteiro. */
@@ -130,7 +130,7 @@ void decodificar(unsigned int ir) {
           printf("sll ");
           printf("%s, ", registerName[getRd(ir)]);
           printf("%s, ", registerName[getRt(ir)]);
-          printf("%s\n", registerName[getShamt(ir)]);
+          printf("%i\n", getShamt(ir));
         }
       } else if(getFunct(ir) == 12) { // 001100 -> syscall, R-Type.
 
@@ -141,7 +141,7 @@ void decodificar(unsigned int ir) {
         printf("srl ");
         printf("%s, ", registerName[getRd(ir)]);
         printf("%s, ", registerName[getRt(ir)]);
-        printf("%s\n", registerName[getShamt(ir)]);
+        printf("%i\n", getShamt(ir));
         
 
       } else if(getFunct(ir) == 3) {  // 000011 -> sra, R-Type.
@@ -149,7 +149,7 @@ void decodificar(unsigned int ir) {
         printf("sra ");
         printf("%s, ", registerName[getRd(ir)]);
         printf("%s, ", registerName[getRt(ir)]);
-        printf("%s\n", registerName[getShamt(ir)]);
+        printf("%i\n", getShamt(ir));
         
 
       } else if(getFunct(ir) == 4) {  // 000100 -> sllv, R-Type.
@@ -166,7 +166,7 @@ void decodificar(unsigned int ir) {
         printf("%s, ", registerName[getRs(ir)]);
         printf("%s\n", registerName[getRt(ir)]);
 
-      } else if(getFunct(ir) == 8) {  // 001000 -> lr, J-Type.
+      } else if(getFunct(ir) == 8) {  // 001000 -> jr, R-Type.
 
         printf("jr ");
         printf("%s\n", registerName[getRs(ir)]);
