@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>    
+#include <string.h>
+#include <ctype.h>
 
 
 char *registerName[32] = {"$zero", "$at", "$v0", "$v1", "$a0", "$a1", "$a2",
@@ -14,7 +15,6 @@ char *registerName2[32] = {"$0", "$1", "$2", "$3", "$4", "$5", "$6",
                        "$21",   "$22", "$23", "$24", "$25", "$26", "$27",
                        "$28",   "$29", "$30", "$31"};
 
-
 void intPrintBinary(int I, int bits){
     if ( bits == 4) I = (I & 0x0000000F);
     else if(bits == 5) I = (I & 0x0000001F);
@@ -27,12 +27,13 @@ void intPrintBinary(int I, int bits){
         else printf("0");
 
     }
+    if(bits == 16 || bits == 26) printf ("\n");
 }
 int getRegister(char* string){
     char Register[6];
     while(string[0] != '$') string += 1;
     int i = 0;
-    while(string[i] != ' ' && string[i] != ',' && string[i] != '\0' && i < 6){
+    while(string[i] != ' ' && string[i] != ',' && string[i] != '\0' && string[i] != ')' && i < 6){
         Register[i] = string[i];
         ++i;
     }
@@ -55,17 +56,44 @@ int getShamt(char* string){
     }
     return atoi(shamt);
 }
-int j_type(char* string){
-
-
-    if(strncmp(string, "j", 1) == 0) {
-        return 1;
-    } else if (strncmp(string, "jr", 2) == 0) {
-        return 1;
-    } else if (strncmp(string, "jal", 3) == 0) {
-        return 1;
+int getAddress(char* string){
+    while(string[0] != '0') string += 1;
+    string += 2;
+    int OP, ADR = 0;
+    char C[2];
+    C[1] = '\0';
+    while(string[0] != ' ' && string[0] != '\n' && string[0] != '\0'){
+        C[0] = toupper(string[0]);
+        if(strcmp(C, "A") == 0)
+            OP = 10;
+        else if(strcmp(C, "B") == 0)
+            OP = 11;
+        else if(strcmp(C, "C") == 0)
+            OP = 12;
+        else if(strcmp(C, "D") == 0)
+            OP = 13;
+        else if(strcmp(C, "E") == 0)
+            OP = 14;
+        else if(strcmp(C, "F") == 0)
+            OP = 15;
+        else 
+            OP = atoi(C);
+        ADR <<= 4;
+        ADR += OP;
+        string += 1;
     }
-    return 0;
+    return ADR;
+}
+int j_type(char opcode[], char* string){
+    int ADR = getAddress(string);
+    
+    if(strcmp(opcode, "j") == 0) {
+        printf("000010");
+        intPrintBinary(ADR, 26);        
+    } else if (strcmp(opcode, "jal") == 0) {
+        printf("000011");
+        intPrintBinary(ADR, 26);
+    }
 }
 int r_type(char opcode[], char* string){
     int Rd, Rs, Rt;
@@ -197,7 +225,7 @@ int r_type(char opcode[], char* string){
     } else if (strcmp(opcode, "syscall") == 0) {
         printf("000000"), printf("00000");
         printf("00000"), printf("00000");
-        printf("0000"), printf("001100\n");
+        printf("00000"), printf("001100\n");
     } else if (strcmp(opcode, "sll") == 0) {
         printf("000000");
         Rd = getRegister(string);
@@ -208,41 +236,221 @@ int r_type(char opcode[], char* string){
     } else if (strcmp(opcode, "nop") == 0) {
         printf("000000"), printf("00000");
         printf("00000"), printf("00000");
-        printf("0000"), printf("000000\n");
+        printf("00000"), printf("000000\n");
         string += 6;
-    }
-
-
-
-
-
-
-
-
-    // implementar j's
+    } else if(strcmp(opcode, "jr") == 0){
+        printf("000000");
+        Rs = getRegister(string);
+        intPrintBinary(Rs, 5);
+        printf("000000000000000001000\n");
+    } 
 }
-int i_type(char* string){
-    char Rs[4];
-    char Rt[4];
-    char Rd[4]; 
-    char opcode[6];
+int i_type(char opcode[], char* string){
+    int Rd, Rt, Rs;
+    int offset, address;
+    if(strcmp(opcode, "bltz") == 0){
 
-    int i = 0;
-    while(string[0] != ' ') {
-        opcode[i] = string[0];
-        ++i, ++string;
+        printf("000001");
+        Rs = getRegister(string);
+        offset = getAddress(&string[4]);
+        intPrintBinary(Rs, 5);
+        printf("00000");
+        intPrintBinary(offset, 16);
+
+    } else if(strcmp(opcode, "bgez") == 0){
+
+        printf("000001");
+        Rs = getRegister(string);
+        offset = getAddress(&string[4]);
+        intPrintBinary(Rs, 5);
+        printf("00001");
+        intPrintBinary(offset, 16);
+
+    } else if(strcmp(opcode, "bltzal") == 0){
+
+        printf("000001");
+        Rs = getRegister(string);
+        offset = getAddress(&string[4]);
+        intPrintBinary(Rs, 5);
+        printf("10000");
+        intPrintBinary(offset, 16);
+
+    } else if(strcmp(opcode, "bgezal") == 0){
+
+        printf("000001");
+        Rs = getRegister(string);
+        offset = getAddress(&string[4]);
+        intPrintBinary(Rs, 5);
+        printf("10001");
+        intPrintBinary(offset, 16);
+
+    } else if(strcmp(opcode, "beq") == 0){
+        
+        printf("000100");
+        Rs = getRegister(string);
+        Rt = getRegister(&string[3]);        
+        offset = getAddress(&string[7]);
+        intPrintBinary(Rs, 5);
+        intPrintBinary(Rt, 5);        
+        intPrintBinary(offset, 16);
+
+    } else if(strcmp(opcode, "bne") == 0){
+
+        printf("000101");
+        Rs = getRegister(string);
+        Rt = getRegister(&string[3]);        
+        offset = getAddress(&string[7]);
+        intPrintBinary(Rs, 5);
+        intPrintBinary(Rt, 5);        
+        intPrintBinary(offset, 16);
+
+    } else if(strcmp(opcode, "blez") == 0){
+
+        printf("000110");
+        Rs = getRegister(string);       
+        offset = getAddress(&string[4]);
+        intPrintBinary(Rs, 5);
+        printf("00000");     
+        intPrintBinary(offset, 16);
+
+    } else if(strcmp(opcode, "bgtz") == 0){
+
+        printf("000111");
+        Rs = getRegister(string);       
+        offset = getAddress(&string[4]);
+        intPrintBinary(Rs, 5);
+        printf("00000");     
+        intPrintBinary(offset, 16);
+
+    } else if(strcmp(opcode, "addi") == 0){
+        
+        printf("001000");
+        Rt = getRegister(string);
+        Rs = getRegister(&string[3]);        
+        offset = getShamt(&string[7]);
+        intPrintBinary(Rs, 5);
+        intPrintBinary(Rt, 5);        
+        intPrintBinary(offset, 16);
+
+    } else if(strcmp(opcode, "addiu") == 0){
+        printf("001001");
+        Rt = getRegister(string);
+        Rs = getRegister(&string[3]);        
+        offset = getShamt(&string[7]);
+        intPrintBinary(Rs, 5);
+        intPrintBinary(Rt, 5);        
+        intPrintBinary(offset, 16);
+    } else if(strcmp(opcode, "slti") == 0){
+        printf("001010");
+        Rt = getRegister(string);
+        Rs = getRegister(&string[3]);        
+        offset = getShamt(&string[7]);
+        intPrintBinary(Rs, 5);
+        intPrintBinary(Rt, 5);        
+        intPrintBinary(offset, 16);
+    } else if(strcmp(opcode, "sltiu") == 0){
+        printf("001011");
+        Rt = getRegister(string);
+        Rs = getRegister(&string[3]);        
+        offset = getShamt(&string[7]);
+        intPrintBinary(Rs, 5);
+        intPrintBinary(Rt, 5);        
+        intPrintBinary(offset, 16);
+    } else if(strcmp(opcode, "andi") == 0){
+        printf("001100");
+        Rt = getRegister(string);
+        Rs = getRegister(&string[3]);        
+        offset = getShamt(&string[7]);
+        intPrintBinary(Rs, 5);
+        intPrintBinary(Rt, 5);        
+        intPrintBinary(offset, 16);
+    } else if(strcmp(opcode, "ori") == 0){
+        printf("001101");
+        Rt = getRegister(string);
+        Rs = getRegister(&string[3]);        
+        offset = getShamt(&string[7]);
+        intPrintBinary(Rs, 5);
+        intPrintBinary(Rt, 5);        
+        intPrintBinary(offset, 16);
+    } else if(strcmp(opcode, "xori") == 0){
+        printf("001110");
+        Rt = getRegister(string);
+        Rs = getRegister(&string[3]);        
+        offset = getShamt(&string[7]);
+        intPrintBinary(Rs, 5);
+        intPrintBinary(Rt, 5);        
+        intPrintBinary(offset, 16);
+    } else if(strcmp(opcode, "lui") == 0){
+        printf("001111");
+        Rt = getRegister(string);      
+        offset = getShamt(&string[4]);
+        printf("00000");
+        intPrintBinary(Rt, 5);        
+        intPrintBinary(offset, 16);
+    } else if(strcmp(opcode, "lb") == 0){
+        printf("100000");
+        Rt = getRegister(string);   
+        offset = getShamt(&string[4]);
+        string += 4;
+        while(string[0] != '(') string += 1;
+        Rs = getRegister(string);
+        intPrintBinary(Rs, 5);             
+        intPrintBinary(Rt, 5);     
+        intPrintBinary(offset, 16);
+    } else if(strcmp(opcode, "lw") == 0){
+        printf("100011");
+        Rt = getRegister(string);   
+        offset = getShamt(&string[4]);
+        string += 4;
+        while(string[0] != '(') string += 1;
+        Rs = getRegister(string);
+        intPrintBinary(Rs, 5);             
+        intPrintBinary(Rt, 5);     
+        intPrintBinary(offset, 16);
+    } else if(strcmp(opcode, "sb") == 0){
+        printf("101000");
+        Rt = getRegister(string);   
+        offset = getShamt(&string[4]);
+        string += 4;
+        while(string[0] != '(') string += 1;
+        Rs = getRegister(string);
+        intPrintBinary(Rs, 5);             
+        intPrintBinary(Rt, 5);     
+        intPrintBinary(offset, 16);
+    } else if(strcmp(opcode, "sw") == 0){
+        printf("101011");
+        Rt = getRegister(string);   
+        offset = getShamt(&string[4]);
+        string += 4;
+        while(string[0] != '(') string += 1;
+        Rs = getRegister(string);
+        intPrintBinary(Rs, 5);             
+        intPrintBinary(Rt, 5);     
+        intPrintBinary(offset, 16);
     }
-    opcode[i] = '\0';
 
 }
 void codificar(FILE* file){
-    char string[100];
+    int i = 0;
+    char string[1000];
     char opcode[6];
     fscanf(file," %s", opcode);
-    // fscanf(file," %[^\n]s", string);    
     do {
-        fscanf(file," %[^\n]s", string);
-        r_type(opcode, string);    
+        while(opcode[0] == '#'){
+            fscanf(file," %[^\n]s", string);
+            fscanf(file," %s", opcode);
+        }
+        if(strcmp(opcode, "nop") != 0)
+            fscanf(file," %[^\n]s", string);
+        while(i < strlen(string)){
+            if(string[i] == '#'){
+                string[i] = '\0';
+            }
+            ++i;
+        }
+        r_type(opcode, string);
+        i_type(opcode, string);
+        j_type(opcode, string);
         fscanf(file," %s", opcode);
     } while(!feof(file));
 }
