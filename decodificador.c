@@ -24,19 +24,19 @@ int mascaraImmediate  = 0x0000FFFF;
 int mascaraAddress    = 0x03FFFFFF;
 
 char *registerName[32] = {"$zero", "$at", "$v0", "$v1", "$a0", "$a1", "$a2",
-                       "$a3",   "$t0", "$t1", "$t2", "$t3", "$t4", "$t5",
-                       "$t6",   "$t7", "$s0", "$s1", "$s2", "$s3", "$s4",
-                       "$s5",   "$s6", "$s7", "$t8", "$t9", "$k0", "$k1",
-                       "$gp",   "$sp", "$fp", "$ra"};
+                  "$a3",   "$t0", "$t1", "$t2", "$t3", "$t4", "$t5",
+                  "$t6",   "$t7", "$s0", "$s1", "$s2", "$s3", "$s4",
+                  "$s5",   "$s6", "$s7", "$t8", "$t9", "$k0", "$k1",
+                  "$gp",   "$sp", "$fp", "$ra"};
 
 /* Função para imprimir um número 32 bits com binário.
-   Adaptado de um código encontrado na internet.    */
+Adaptado de um código encontrado na internet.    */
 void bin_prnt_byte(int x) {
-  
+
   int i, n;
 
   char buffer [50] = {0};
-  
+
   for (i = 0; i < 32; i++) {
     if ((x & 0x80000000) != 0) {
       // printf("1");
@@ -49,54 +49,53 @@ void bin_prnt_byte(int x) {
       // printf(" "); /* insert a space between nybbles */
       n = sprintf (buffer, "%s%s", buffer, " ");
     }
-    x = x << 1;
+      x = x << 1;
   }
 }
 /* Função que recupera o campo OpCode. */
 unsigned int getOpCode(unsigned int ir) {
-  
   unsigned int opcode = ((ir & mascaraOpCode) >> 26);
   return opcode;
 }
 
 /* Função que recupera o campo registrador Rs. */
 unsigned int getRs(unsigned int ir) {
-  
+
   unsigned int rs = (ir & mascaraRs) >> 21;
   return rs;
 }
 
 /* Função que recupera o campo registrador Rt. */
 unsigned int getRt(unsigned int ir) {
-  
+
   unsigned int rt = (ir & mascaraRt) >> 16;
   return rt;
 }
 
 /* Função que recupera o campo registrador Rd. */
 unsigned int getRd(unsigned int ir) {
-  
+
   unsigned int rd = (ir & mascaraRd) >> 11;
   return rd;
 }
 
 /* Função que recupera o campo Shamt (deslocamento). */
 int getShamt(unsigned int ir) {
-  
+
   unsigned int shamt = (ir & mascaraShamt) >> 6;
   return shamt;
 }
 
 /* Função que recupera o campo Funct. */
 unsigned int getFunct(unsigned int ir) {
-  
+
   unsigned int funct = (ir & mascaraFunct);
   return funct;
 }
 
 /* Função que recupera o campo imm. */
 int getImmediate(unsigned int ir) {
-  
+
   unsigned int imm = (ir & mascaraImmediate);
   return imm;
 }
@@ -104,14 +103,14 @@ int getImmediate(unsigned int ir) {
 
 /* Função que recupera o campo Address. */
 unsigned int getAddress(unsigned int ir) {
-  
+
   unsigned int address = (ir & mascaraAddress);
   return address * 4; 
 }
 
 /* Converte um char * representando um binário, para inteiro. */
 int intFromBinary(char *s) {
-  
+
   int inteiro = (int) strtol(s, 0, 2);
   bin_prnt_byte(inteiro);
 
@@ -120,28 +119,26 @@ int intFromBinary(char *s) {
 
 /* Decodificação das instruções. */
 void decodificar(unsigned int ir) {
-  
+
   switch ( getOpCode(ir) ) {
     case 0:  // 000000, Aritmética.
       if( getFunct(ir) == 0 ) {
-	      if(getRd(ir) == 0 && getRs(ir) == 0 && getRt(ir) == 0)
-		      printf("nop\n");
+        if(getRd(ir) == 0 && getRs(ir) == 0 && getRt(ir) == 0)
+          printf("nop\n");
         else { // 000000 -> sll, R-Type
           printf("sll ");
           printf("%s, ", registerName[getRd(ir)]);
           printf("%s, ", registerName[getRt(ir)]);
-          printf("%s\n", registerName[getShamt(ir)]);
+          printf("%i\n", getShamt(ir));
         }
-      } else if(getFunct(ir) == 12) { // 001100 -> syscall, R-Type.
-
-        printf("syscall\n");
-
-      } else if(getFunct(ir) == 2) {  // 000010 -> srl, R-Type.
+      } else if(getFunct(ir) == 12) // 001100 -> syscall, R-Type.
+          printf("syscall\n");
+      else if(getFunct(ir) == 2) {  // 000010 -> srl, R-Type.
 
         printf("srl ");
         printf("%s, ", registerName[getRd(ir)]);
         printf("%s, ", registerName[getRt(ir)]);
-        printf("%s\n", registerName[getShamt(ir)]);
+        printf("%i\n", getShamt(ir));
         
 
       } else if(getFunct(ir) == 3) {  // 000011 -> sra, R-Type.
@@ -149,7 +146,7 @@ void decodificar(unsigned int ir) {
         printf("sra ");
         printf("%s, ", registerName[getRd(ir)]);
         printf("%s, ", registerName[getRt(ir)]);
-        printf("%s\n", registerName[getShamt(ir)]);
+        printf("%i\n", getShamt(ir));
         
 
       } else if(getFunct(ir) == 4) {  // 000100 -> sllv, R-Type.
@@ -166,7 +163,7 @@ void decodificar(unsigned int ir) {
         printf("%s, ", registerName[getRs(ir)]);
         printf("%s\n", registerName[getRt(ir)]);
 
-      } else if(getFunct(ir) == 8) {  // 001000 -> lr, J-Type.
+      } else if(getFunct(ir) == 8) {  // 001000 -> jr, I-Type.
 
         printf("jr ");
         printf("%s\n", registerName[getRs(ir)]);
@@ -233,7 +230,6 @@ void decodificar(unsigned int ir) {
         printf("%s, ", registerName[getRs(ir)]);
         printf("%s\n", registerName[getRt(ir)]);
 
-      
       } else if(getFunct(ir) == 36) { // 100100 -> and, R-Type.
 
         printf("and ");
@@ -249,21 +245,21 @@ void decodificar(unsigned int ir) {
         printf("%s\n", registerName[getRt(ir)]);
 
       } else if(getFunct(ir) == 38) { // 100110 -> xor, R-Type.
-      
+
         printf("xor ");
         printf("%s, ", registerName[getRd(ir)]);
         printf("%s, ", registerName[getRs(ir)]);
         printf("%s\n", registerName[getRt(ir)]);
 
       } else if(getFunct(ir) == 42) { // 101010 -> slt, R-Type.
-      
+
         printf("slt ");
         printf("%s, ", registerName[getRd(ir)]);
         printf("%s, ", registerName[getRs(ir)]);
         printf("%s\n", registerName[getRt(ir)]);
 
       } else if(getFunct(ir) == 43) { // 101011 -> sltu, R-Type.
-      
+
         printf("sltu ");
         printf("%s, ", registerName[getRd(ir)]);
         printf("%s, ", registerName[getRs(ir)]);
@@ -272,24 +268,24 @@ void decodificar(unsigned int ir) {
       } else {
         fprintf(stdout, "Instrução não implementada. funct: %d.\n", getFunct(ir));
       }
-		  break;
+      break;
     case 1:
       if(getRt(ir) == 0){ // 000001 -> I-Type, bltz
         printf("bltz ");
         printf("%s, ", registerName[getRs(ir)]);
-        printf("0x%0.8X\n", getAddress(ir));
+        printf("0x%0.4X\n", getImmediate(ir));
       } else if(getRt(ir) == 1){ // 000001 -> I-Type, bgez
         printf("bgez ");
         printf("%s, ", registerName[getRs(ir)]);
-        printf("0x%0.8X\n", getAddress(ir));
+        printf("0x%0.4X\n", getImmediate(ir));
       } else if(getRt(ir) == 16){ // 000001 -> I-Type, bltzal
         printf("bltzal ");
         printf("%s, ", registerName[getRs(ir)]);
-        printf("0x%0.8X\n", getAddress(ir));
+        printf("0x%0.4X\n", getImmediate(ir));
       } else if(getRt(ir) == 17){ // 000001 -> I-Type, bgezal
         printf("bgezal ");
         printf("%s, ", registerName[getRs(ir)]);
-        printf("0x%0.8X\n", getAddress(ir));
+        printf("0x%0.4X\n", getImmediate(ir));
       } 
       break;            
     case 2: // 000010 -> J-Type, j
@@ -304,28 +300,28 @@ void decodificar(unsigned int ir) {
       printf("bne ");
       printf("%s, ", registerName[getRs(ir)]);
       printf("%s, ", registerName[getRt(ir)]);
-      printf("0x%0.8X\n", getAddress(ir));
+      printf("0x%0.4X\n", getImmediate(ir));
       break;
     case 5: // 00101 -> I-Type. bne
       printf("beq ");
       printf("%s, ", registerName[getRs(ir)]);
       printf("%s, ", registerName[getRt(ir)]);
-      printf("0x%0.8X\n", getAddress(ir));
+      printf("0x%0.4X\n", getImmediate(ir));
       break;
     case 6: // 000110 -> I-Type, blez
       printf("blez ");
       printf("%s, ", registerName[getRs(ir)]);
-      printf("0x%0.8X\n", getAddress(ir));
+      printf("0x%0.4X\n", getImmediate(ir));
       break;
     case 7: // 000111 -> I-Type, bgtz
       printf("bgtz ");
       printf("%s, ", registerName[getRs(ir)]);
-      printf("0x%0.8X\n", getAddress(ir));
+      printf("0x%0.4X\n", getImmediate(ir));
       break;
     case 8: // 001000 -> I-Type. addi 
       printf("addi ");
-      printf("%s, ", registerName[getRs(ir)]);
       printf("%s, ", registerName[getRt(ir)]);
+      printf("%s, ", registerName[getRs(ir)]);
       printf("%d\n", getImmediate(ir));
       break;
     case 9: // 001001 -> I-Type. addiu
@@ -352,7 +348,7 @@ void decodificar(unsigned int ir) {
       printf("%s, ", registerName[getRs(ir)]);
       printf("%d\n", getImmediate(ir));
       break;
-    case 13: // 001110 -> I-Type. ori
+    case 13: // 001101 -> I-Type. ori
       printf("ori ");
       printf("%s, ", registerName[getRt(ir)]);
       printf("%s, ", registerName[getRs(ir)]);
@@ -364,7 +360,6 @@ void decodificar(unsigned int ir) {
       printf("%s, ", registerName[getRs(ir)]);
       printf("%d\n", getImmediate(ir));
       break;  
-    
     case 15: // 100011 -> I-Type, lui
       printf("lui ");
       printf("%s, ", registerName[getRt(ir)]);
@@ -400,7 +395,7 @@ void decodificar(unsigned int ir) {
 }
 
 int main(int argc, char *argv[]) {
-  
+
   int i;
   unsigned int ir;
   if (argc < 2) {
