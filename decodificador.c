@@ -52,7 +52,6 @@ void bin_prnt_byte(int x) {
     x = x << 1;
   }
 }
-
 /* Função que recupera o campo OpCode. */
 unsigned int getOpCode(unsigned int ir) {
   
@@ -102,11 +101,12 @@ int getImmediate(unsigned int ir) {
   return imm;
 }
 
+
 /* Função que recupera o campo Address. */
 unsigned int getAddress(unsigned int ir) {
   
   unsigned int address = (ir & mascaraAddress);
-  return address; 
+  return address * 4; 
 }
 
 /* Converte um char * representando um binário, para inteiro. */
