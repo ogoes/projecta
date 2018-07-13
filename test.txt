@@ -1,3 +1,6 @@
+<<<<<<< HEAD
+addi $t1, $t0, 12
+=======
 sw $ra, 0($sp)
 add $t0, $zero, $s1
 add $zero, $zero, $zero
@@ -11,3 +14,4 @@ sw $t0, 400($t1)
 lw $s3, 4($zero)
 sw $t4, 12($zero)
 j 0x00100001
+>>>>>>> b521b64ea15f643fe10fe1e5f4fc0fbe51969717
